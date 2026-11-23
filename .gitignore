@@ -53,3 +53,6 @@ usercache.json
 ops.json
 whitelist.json
 banned-*.json
+
+# 发布产物（GitHub Release 资产，不入库）
+dist/

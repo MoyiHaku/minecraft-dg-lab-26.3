@@ -38,7 +38,7 @@ public final class StatusServer implements ModInitializer {
         ServerPlayConnectionEvents.DISCONNECT.register((listener, server) -> latest.remove(listener));
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> latest.clear());
         CommandRegistrationCallback.EVENT.register((dispatcher, registry, environment) -> register(dispatcher));
-        LoggerFactory.getLogger("Minecraft-DG-LAB Status").info("Registered server-side status sharing and /dglabserver");
+        LoggerFactory.getLogger("Minecraft-DG-LAB-Connect").info("Registered server-side status sharing and /dglabserver");
     }
 
     private void register(CommandDispatcher<CommandSourceStack> dispatcher) {

@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "id": "dglab",
   "version": "${version}",
-  "name": "Minecraft-DG-LAB · Status Edition",
-  "description": "Local, configurable damage HUD and named waveform previews. Optional read-only V3 app pairing and A/B sharing with the connected server.",
+  "name": "Minecraft-DG-LAB-Connect",
+  "description": "Local, configurable damage HUD with 16 wave presets. Optional V3 app pairing that mirrors each hit onto the device, plus A/B readout sharing with the connected server.",
   "environment": "*",
   "authors": [
     "DancingSnow (original Minecraft-DG-LAB)",

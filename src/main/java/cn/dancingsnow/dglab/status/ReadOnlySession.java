@@ -36,7 +36,8 @@ final class ReadOnlySession {
     private final ChannelGroup channels = new DefaultChannelGroup(group.next(), true);
     private volatile View view = new View(Phase.OPENING, "", "", null, "");
     private Channel listener;
-    private Channel boundPhone;
+    private volatile Channel boundPhone;
+    private volatile String phoneId;
     private ScheduledFuture<?> deadline;
     private boolean stopped;
 
@@ -45,6 +46,18 @@ final class ReadOnlySession {
     }
 
     View view() { return view; }
+
+    /**
+     * Sends one V3 server-to-app message (strength / pulse / clear) over the paired socket.
+     * Safe to call from the game thread; returns false when nothing is paired.
+     */
+    boolean send(String message) {
+        Channel phone = boundPhone;
+        String target = phoneId;
+        if (phone == null || target == null || !phone.isActive()) return false;
+        phone.writeAndFlush(new TextWebSocketFrame(JSON.toJson(new Wire("msg", token, target, message))));
+        return true;
+    }
 
     private void start(String requestedAddress, int port) {
         try {
@@ -119,6 +132,7 @@ final class ReadOnlySession {
         stopped = true;
         if (deadline != null) deadline.cancel(false);
         boundPhone = null;
+        phoneId = null;
         view = new View(phase, "", "", null, error);
         channels.close();
         group.shutdownGracefully(0, 1, TimeUnit.SECONDS);
@@ -159,6 +173,7 @@ final class ReadOnlySession {
                         || !accept(ctx.channel())) { ctx.close(); return; }
                 paired = true;
                 bindTimeout.cancel(false);
+                ReadOnlySession.this.phoneId = this.phoneId;
                 ctx.writeAndFlush(new TextWebSocketFrame(JSON.toJson(new Wire("bind", incoming.clientId(), incoming.targetId(), "200"))));
                 return;
             }

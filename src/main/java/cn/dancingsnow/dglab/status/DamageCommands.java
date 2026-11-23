@@ -54,6 +54,25 @@ final class DamageCommands {
                 .then(literal("off").executes(c -> { options.enabled = false; feedback.reset(); return saved(c.getSource()); }))
                 .then(literal("status").executes(c -> { c.getSource().sendFeedback(feedback.state()); return 1; }))
                 .then(sources).then(literal("source").then(source))
+                .then(literal("death")
+                        .executes(c -> showDeath(c.getSource()))
+                        .then(literal("on").executes(c -> { options.deathEnabled = true; return saved(c.getSource()); }))
+                        .then(literal("off").executes(c -> { options.deathEnabled = false; return saved(c.getSource()); }))
+                        .then(literal("step").then(argument("n", IntegerArgumentType.integer(-100, 100))
+                                .executes(c -> {
+                                    options.deathStep = IntegerArgumentType.getInteger(c, "n");
+                                    return saved(c.getSource());
+                                })))
+                        .then(literal("wave").then(waveArg().executes(c -> {
+                            options.deathWave = wave(c);
+                            return saved(c.getSource());
+                        })))
+                        .then(literal("reset").executes(c -> {
+                            options.deathEnabled = true;
+                            options.deathStep = 100;
+                            options.deathWave = WavePreviews.DEFAULT;
+                            return saved(c.getSource());
+                        })))
                 .then(number("base", 0, v -> { options.base = v; feedback.reset(); }))
                 .then(number("step", -100, v -> options.step = v))
                 .then(number("decay", 0, v -> options.decay = v))
@@ -85,8 +104,14 @@ final class DamageCommands {
     }
 
     private int showSource(FabricClientCommandSource source, String id) {
-        source.sendFeedback(DamageFeedback.text("source", id, DamageFeedback.text(options.includes(id) ? "on" : "off"),
+        source.sendFeedback(DamageFeedback.text("source", SourceNames.text(id), DamageFeedback.text(options.includes(id) ? "on" : "off"),
                 options.stepFor(id), options.waveFor(id)));
+        return 1;
+    }
+
+    private int showDeath(FabricClientCommandSource source) {
+        source.sendFeedback(DamageFeedback.text("death", DamageFeedback.text(options.deathEnabled ? "on" : "off"),
+                options.deathStep, options.deathWave));
         return 1;
     }
 

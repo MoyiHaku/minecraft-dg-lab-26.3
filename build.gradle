@@ -3,6 +3,13 @@ plugins {
 	id 'maven-publish'
 }
 
+// 产物名：Minecraft-DG-LAB-Connect-26.3-Fabric-<通道>_<版本>，例如 ...-Beta_0.0.1.jar
+// 26.3 是 Minecraft 版本，模组自身版本只由 mod_version 决定。
+def channel = (project.findProperty('mod_channel') ?: 'Release').toString()
+def modVersion = (project.findProperty('mod_version') ?: '0.0.1').toString()
+
+version = "${channel}_${modVersion}"
+
 base {
 	archivesName = project.archives_base_name
 }
@@ -25,11 +32,12 @@ dependencies {
 }
 
 processResources {
-	def version = project.version
-	inputs.property "version", version
+	// Fabric 只接受语义化版本，因此清单里写 0.0.1-alpha，文件名保留 Alpha_0.0.1
+	def semver = "${modVersion}-${channel.toLowerCase(Locale.ROOT)}"
+	inputs.property "version", semver
 
 	filesMatching("fabric.mod.json") {
-		expand "version": version
+		expand "version": semver
 	}
 }
 

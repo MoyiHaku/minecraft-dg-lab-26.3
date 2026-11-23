@@ -26,6 +26,18 @@ final class DamageOptions {
     String wave = WavePreviews.DEFAULT;
     Map<String, Rule> sources = new TreeMap<>();
 
+    /** Device output. Off by default, so the mod stays a read-only HUD until the player opts in. */
+    boolean device = false;
+    int deviceChannel = 1;
+    int deviceFrames = 2;
+    int queueSeconds = 6;
+    Boolean deviceClearIdle = true;
+
+    /** The death event is configured on its own, next to the per-damage-type rules. */
+    boolean deathEnabled = true;
+    int deathStep = 100;
+    String deathWave = WavePreviews.ALL.containsKey("潮汐") ? "潮汐" : WavePreviews.DEFAULT;
+
     static final class Rule {
         Boolean enabled;
         Integer step;
@@ -48,6 +60,12 @@ final class DamageOptions {
         step = Math.clamp(step, -100, 100);
         decay = Math.clamp(decay, 0, 100);
         if (!WavePreviews.ALL.containsKey(wave)) wave = WavePreviews.DEFAULT;
+        deviceChannel = Math.clamp(deviceChannel, 1, 3);
+        deviceFrames = Math.clamp(deviceFrames, 1, 3);
+        queueSeconds = Math.max(0, queueSeconds);
+        if (deviceClearIdle == null) deviceClearIdle = true;
+        deathStep = Math.clamp(deathStep, -100, 100);
+        if (!WavePreviews.ALL.containsKey(deathWave)) deathWave = WavePreviews.DEFAULT;
         Map<String, Rule> fixed = new TreeMap<>();
         if (sources != null) sources.forEach((id, rule) -> {
             var key = Identifier.tryParse(id);
@@ -59,8 +77,26 @@ final class DamageOptions {
         sources = fixed;
     }
 
-    boolean includes(String id) {
-        Rule rule = sources.get(id);
+    /** Restores the shipped defaults; the GUI reset button and future commands both use it. */
+    void defaults() {
+        enabled = true;
+        allSources = true;
+        base = 20;
+        step = 12;
+        decay = 4;
+        wave = WavePreviews.DEFAULT;
+        device = false;
+        deviceChannel = 1;
+        deviceFrames = 2;
+        queueSeconds = 6;
+        deviceClearIdle = true;
+        deathEnabled = true;
+        deathStep = 100;
+        deathWave = WavePreviews.ALL.containsKey("潮汐") ? "潮汐" : WavePreviews.DEFAULT;
+        sources.clear();
+    }
+
+    boolean includes(String id) {        Rule rule = sources.get(id);
         return rule != null && rule.enabled != null ? rule.enabled : allSources;
     }
 

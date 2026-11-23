@@ -14,18 +14,22 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.minecraft.client.Minecraft;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal;
 
 public final class MonitorClient implements ClientModInitializer {
-    static final Logger LOG = LoggerFactory.getLogger("Minecraft-DG-LAB Status");
+    static final Logger LOG = LoggerFactory.getLogger("Minecraft-DG-LAB-Connect");
     private final MonitorHud hud = new MonitorHud();
     private final HudOptions options = new HudOptions();
+    private DeviceLink device;
     private DamageFeedback feedback;
     private ReadOnlySession session;
     private ReadOnlySession.Phase announced;
@@ -35,12 +39,21 @@ public final class MonitorClient implements ClientModInitializer {
 
     @Override public void onInitializeClient() {
         options.load();
-        feedback = new DamageFeedback(DamageOptions.load());
+        var damage = DamageOptions.load();
+        device = new DeviceLink(damage);
+        feedback = new DamageFeedback(damage, device);
         ClientPlayNetworking.registerGlobalReceiver(DamageNotice.TYPE, (packet, ctx) -> {
             var expected = ctx.player();
             ctx.client().execute(() -> {
                 if (expected != null && ctx.client().player == expected)
                     feedback.hit(expected, packet.source().toString());
+            });
+        });
+        ClientPlayNetworking.registerGlobalReceiver(DeathNotice.TYPE, (packet, ctx) -> {
+            var expected = ctx.player();
+            ctx.client().execute(() -> {
+                if (expected != null && ctx.client().player == expected)
+                    feedback.death(expected, packet.source().toString());
             });
         });
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, context) -> commands(dispatcher));
@@ -55,12 +68,13 @@ public final class MonitorClient implements ClientModInitializer {
             if (mc.player == null || mc.gui.screen() != null || mc.getDebugOverlay().showDebugScreen()) return;
             var view = session == null ? null : session.view();
             if (view != null) hud.draw(g, mc.font, view, options);
-            if (options.visible && (view == null || view.phase() != ReadOnlySession.Phase.PAIRING)) {
-                boolean hasAppPanel = view != null && view.phase() == ReadOnlySession.Phase.CONNECTED;
-                feedback.draw(g, mc.font, options.right, hasAppPanel ? 50 : 6);
+            // The damage panel mirrors what is sent to the device, so it only exists while paired.
+            if (options.visible && feedback.options.enabled && view != null
+                    && view.phase() == ReadOnlySession.Phase.CONNECTED) {
+                feedback.draw(g, mc.font, options.right, 50);
             }
         });
-        LOG.info("Loaded Minecraft-DG-LAB 26.3 read-only status port");
+        LOG.info("Loaded Minecraft-DG-LAB-Connect for Fabric 26.3");
     }
 
     private void commands(CommandDispatcher<FabricClientCommandSource> dispatcher) {
@@ -81,6 +95,27 @@ public final class MonitorClient implements ClientModInitializer {
                     return 1;
                 }))
                 .then(new DamageCommands(feedback).build())
+                .then(literal("menu").executes(c -> {
+                    Minecraft.getInstance().execute(() ->
+                            Minecraft.getInstance().setScreenAndShow(new DglabConfigScreen(feedback, device, options)));
+                    return 1;
+                }))
+                .then(literal("device").executes(c -> info(c.getSource(), "device_help"))
+                        .then(literal("on").executes(c -> {
+                            feedback.options.device = true;
+                            return savedDamage(c.getSource());
+                        }))
+                        .then(literal("off").executes(c -> {
+                            feedback.options.device = false;
+                            device.stop();
+                            return savedDamage(c.getSource());
+                        }))
+                        .then(number2("channel", 1, 3, v -> { feedback.options.deviceChannel = v; device.stop(); }))
+                        .then(number2("frames", 1, 3, v -> { feedback.options.deviceFrames = v; device.stop(); }))
+                        .then(number2("queue", 0, Integer.MAX_VALUE, v -> feedback.options.queueSeconds = v))
+                        .then(literal("idle")
+                                .then(literal("on").executes(c -> idle(c.getSource(), true)))
+                                .then(literal("off").executes(c -> idle(c.getSource(), false)))))
                 .then(literal("share").executes(c -> info(c.getSource(), sharing ? "share_active" : "share_inactive"))
                         .then(literal("on").executes(c -> enableSharing(c.getSource())))
                         .then(literal("off").executes(c -> {
@@ -100,6 +135,23 @@ public final class MonitorClient implements ClientModInitializer {
         });
     }
 
+    private LiteralArgumentBuilder<FabricClientCommandSource> number2(String label, int min, int max, IntConsumer set) {
+        return literal(label).then(argument("n", IntegerArgumentType.integer(min, max)).executes(c -> {
+            set.accept(IntegerArgumentType.getInteger(c, "n"));
+            return savedDamage(c.getSource());
+        }));
+    }
+
+    private int savedDamage(FabricClientCommandSource source) {
+        return info(source, feedback.options.save() ? "saved" : "temporary");
+    }
+
+    private int idle(FabricClientCommandSource source, boolean on) {
+        feedback.options.deviceClearIdle = on;
+        if (on) device.stop();
+        return savedDamage(source);
+    }
+
     private int connect(FabricClientCommandSource source, String address, int port) {
         if (session != null) {
             var phase = session.view().phase();
@@ -110,6 +162,8 @@ public final class MonitorClient implements ClientModInitializer {
         }
         disconnect(true);
         session = new ReadOnlySession(address, port);
+        device.session(session);
+        feedback.reset();
         announced = ReadOnlySession.Phase.OPENING;
         return info(source, "opening");
     }
@@ -157,6 +211,8 @@ public final class MonitorClient implements ClientModInitializer {
 
     private void disconnect(boolean notifyServer) {
         stopSharing(notifyServer);
+        device.session(null);
+        feedback.reset();
         if (session != null) session.close();
         session = null;
         announced = null;
@@ -165,13 +221,24 @@ public final class MonitorClient implements ClientModInitializer {
 
     private void tick(Minecraft mc) {
         feedback.tick(mc.player);
+        device.tick();
         if (session == null || mc.player == null) return;
         var view = session.view();
+        if (terminal(view.phase())) {
+            device.session(null);
+            feedback.reset();
+        }
         syncToServer(view);
-        if (view.phase() == announced) return;
-        announced = view.phase();
-        if (view.phase() != ReadOnlySession.Phase.PAIRING) hud.clearQr();
-        mc.player.sendSystemMessage(status());
+        if (view.phase() != announced) {
+            announced = view.phase();
+            if (view.phase() != ReadOnlySession.Phase.PAIRING) hud.clearQr();
+            Component message = status();
+            if (view.phase() == ReadOnlySession.Phase.CONNECTED)
+                message = message.copy().append(" ").append(Component.translatable("dglab.status.open_menu")
+                        .withStyle(style -> style.withColor(ChatFormatting.AQUA)
+                                .withClickEvent(new ClickEvent.RunCommand("/dglab menu"))));
+            mc.player.sendSystemMessage(message);
+        }
     }
 
     private Component status() {
