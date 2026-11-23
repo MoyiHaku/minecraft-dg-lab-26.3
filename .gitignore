@@ -1,16 +1,47 @@
+# Gradle
+.gradle/
 build/
-.build/
-__pycache__/
-*.pyc
-*.class
-*.jar
-*.mrpack
-*.zip
+out/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# Fabric Loom run directories
+run/
+runs/
+remappedSrc/
+
+# IDE
 .idea/
 .vscode/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+bin/
+.sass-cache/
+*.launch
+
+# OS
 .DS_Store
-runtime/
-libraries/
+Thumbs.db
+desktop.ini
+
+# Java
+*.class
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+*.nar
+hs_err_pid*
+replay_pid*
+
+# Python helper scripts
+__pycache__/
+*.pyc
+.env*
+
+# Minecraft runtime leftovers
 logs/
 crash-reports/
 config/
@@ -22,4 +53,3 @@ usercache.json
 ops.json
 whitelist.json
 banned-*.json
-.env*

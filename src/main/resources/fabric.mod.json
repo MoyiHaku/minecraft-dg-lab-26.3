@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "dglab",
-  "version": "1.2.7+status.26.3.3",
+  "version": "${version}",
   "name": "Minecraft-DG-LAB · Status Edition",
   "description": "Local, configurable damage HUD and named waveform previews. Optional read-only V3 app pairing and A/B sharing with the connected server.",
   "environment": "*",
@@ -19,11 +19,6 @@
       "cn.dancingsnow.dglab.status.MonitorClient"
     ]
   },
-  "jars": [
-    {
-      "file": "META-INF/jars/zxing-core-3.5.3.jar"
-    }
-  ],
   "depends": {
     "minecraft": "26.3",
     "java": ">=25",
