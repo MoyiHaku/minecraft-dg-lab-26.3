@@ -1,5 +1,10 @@
 *.bat -text
 *.java text eol=lf
 *.json text eol=lf
-*.py text eol=lf
+*.gradle text eol=lf
+*.properties text eol=lf
 *.md text eol=lf
+*.py text eol=lf
+gradlew text eol=lf
+gradle-wrapper.jar binary
+*.png binary

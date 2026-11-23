@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "dglab",
+  "version": "${version}",
+  "name": "Minecraft-DG-LAB-Connect",
+  "description": "Local, configurable damage HUD with 16 wave presets. Optional V3 app pairing that mirrors each hit onto the device, plus A/B readout sharing with the connected server.",
+  "environment": "*",
+  "authors": [
+    "DancingSnow (original Minecraft-DG-LAB)",
+    "Independent Fabric status port"
+  ],
+  "license": "AGPL-3.0-only",
+  "icon": "icon.png",
+  "entrypoints": {
+    "main": [
+      "cn.dancingsnow.dglab.status.StatusServer"
+    ],
+    "client": [
+      "cn.dancingsnow.dglab.status.MonitorClient"
+    ]
+  },
+  "depends": {
+    "minecraft": "26.3",
+    "java": ">=25",
+    "fabricloader": ">=0.20.1",
+    "fabric-api": ">=0.166.2"
+  }
+}
