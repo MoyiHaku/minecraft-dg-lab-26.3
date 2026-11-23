@@ -1,0 +1,30 @@
+﻿Minecraft Java 26.3 / Fabric　·　生电服客户端选装
+
+DG-LAB 手机读数和服务器同步
+在启动器中导入本目录的 Minecraft-DG-LAB-26.3-Fabric-Status.mrpack。进入服务器后运行 /dglab share on，用同一局域网内的 DG-LAB 3.x App 扫描左上角二维码，配对后 /dglabserver status 可查看本服读数。
+服主在控制台输入 dglabserver list、dglabserver status 玩家名，即可查询已共享的读数。普通玩家用 /dglabserver status 查询自己的状态。
+/dglab share off 撤回读数并保留本机 HUD。/dglab disconnect 关闭配对。只有本机配对需求时可用 /dglab connect。
+装过旧只读客户端的玩家需要更新到此版本才可同步。详细操作和源码见 Minecraft-DG-LAB-26.3-Fabric-Status.jar 内的 README.md 及 source/。
+
+本玩家受伤 HUD
+新版本在本人受到游戏伤害时显示画面反馈。手机配对和读数共享均为选用。
+进服后输入 /dglab feedback 查看设置。/dglab feedback waves 列出 16 种预设，点名称可填入选择命令。/dglab feedback preview 潮汐 可单独预览。
+只看跌落时依次输入 /dglab feedback sources none 和 /dglab feedback source minecraft:fall on。
+用 /dglab feedback source minecraft:fall step 15 设为每次增加 15 点，用 /dglab feedback source minecraft:fall wave 潮汐 选择曲线。step 也接受负数。
+画面反馈计量为 0–100，实际 A/B 来自手机回报。服务端只接收玩家主动共享的 A/B 读数。
+
+其他可选 HUD（低血量和环境）
+需要这项功能的玩家可以导入原有的 DGLabCraft-HUD-26.3.mrpack。已经装好服务器同步整合包的玩家只需追加 mods/DGLabCraft-HUD-26.3-fabric.jar，就能同时使用这两项功能。
+
+手动安装
+Minecraft Java 26.3，Fabric Loader 0.20.1，Java 25。将 mods 内的 fabric-api-0.166.2+26.3.jar 以及自己选择的模组放入当前客户端实例的 mods。手机读数使用 Minecraft-DG-LAB-26.3-Fabric-Status.jar，游戏画面反馈使用 DGLabCraft-HUD-26.3-fabric.jar。每个模组保留一个版本即可。
+使用原版客户端的玩家也可以照常进入服务器。开服电脑用 localhost 加入，其他玩家填服主提供的地址。
+
+游戏画面反馈
+• 进入世界后按 K 打开设置。可调整显示时机、屏幕位置、环境提示，也可以点「预览提示面板」立即看效果。
+• 默认有事件时显示。受伤时显示实际失去的心数；生命值不超过 3 颗心时，显示低血量提示及心跳图形。
+• 支持下界、末地、下界传送门和细雪。联机中缺少可用的具体受伤来源时显示通用受伤提示。
+• 按键可在 Minecraft 的按键绑定设置中调整。每个实例的选项保存在 config/dglabcraft-hud.properties。
+• 本版为独立 HUD 移植，反馈显示在游戏画面上。本版不提供实体设备配对和电刺激功能。
+
+作者、许可及可重新构建的完整源码随附在 source 文件夹。
